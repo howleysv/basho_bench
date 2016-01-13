@@ -214,18 +214,23 @@ id() ->
 add_code_paths([]) ->
     ok;
 add_code_paths([Path | Rest]) ->
-    Absname = filename:absname(Path),
-    CodePath = case filename:basename(Absname) of
-                   "ebin" ->
-                       Absname;
-                   _ ->
-                       filename:join(Absname, "ebin")
-               end,
-    case code:add_path(CodePath) of
-        true ->
-            add_code_paths(Rest);
-        Error ->
-            ?FAIL_MSG("Failed to add ~p to code_path: ~p\n", [CodePath, Error])
+    case filelib:wildcard(Path) of
+        [Path] ->
+            Absname = filename:absname(Path),
+            CodePath = case filename:basename(Absname) of
+                           "ebin" ->
+                               Absname;
+                           _ ->
+                               filename:join(Absname, "ebin")
+                       end,
+            case code:add_path(CodePath) of
+                true ->
+                    add_code_paths(Rest);
+                Error ->
+                    ?FAIL_MSG("Failed to add ~p to code_path: ~p\n", [CodePath, Error])
+            end;
+        Matches ->
+            add_code_paths(Matches ++ Rest)
     end.
 
 
